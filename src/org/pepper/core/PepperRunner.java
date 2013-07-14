@@ -49,6 +49,73 @@ public class PepperRunner extends BlockJUnit4ClassRunner {
     }
   }
 
+  // Given a line in the feature file, it returns the proper Step method in the StepDefinitions file to call
+  public FrameworkMethod extractMethod(String line) {
+    // handle Given-When-Then step
+    FrameworkMethod method = map.get(line);
+
+    if (method != null) {
+      return method;
+    }
+
+    StringTokenizer stepTokenizer, keyTokenizer;
+    String keyToken, stepToken;
+
+    // *** check if step is parameterized
+    // Note: Users should expect parameterized steps to take a little longer to process.
+
+    // for each step method in the StepDefinition subclass
+    for (String key : map.keySet()) {
+      params.clear();
+
+      keyTokenizer = new StringTokenizer(key);
+      stepTokenizer = new StringTokenizer(line);
+
+      // iterate over each word in the step method and in the line of the feature file
+      while (keyTokenizer.hasMoreTokens() && stepTokenizer.hasMoreTokens()) {
+        keyToken = keyTokenizer.nextToken();
+        stepToken = stepTokenizer.nextToken();
+
+        // if the word in the given line of the feature file doesn't match up with the word in the step
+        if(!keyToken.equals(stepToken)) {
+          // if word in step method begins with $ then it must be variable placeholder
+          if (keyToken.startsWith("$")) {
+            try {
+              params.add(Integer.parseInt(stepToken));
+            }
+            catch (NumberFormatException numberFormat) {
+              numberFormat.printStackTrace();
+            }
+          }
+          break; // from while-loop
+        }
+      }
+
+      // if there are no more words in either the line or the step method
+      if (!keyTokenizer.hasMoreTokens() && !stepTokenizer.hasMoreTokens()) {
+        // then invoke the corresponding to this key
+        return map.get(key);
+      }
+    }
+
+    return null;
+  }
+
+  public void generateStub(String line) {
+    System.out.println("@Pending");
+    if (line.startsWith("Given")) {
+      System.out.print("@Given(");
+    }
+    else if (line.startsWith("When")) {
+      System.out.print("@When(");
+    }
+    else if (line.startsWith("Then")) {
+      System.out.print("@Then(");
+    }
+    System.out.println(line + ")");
+    System.out.println();
+  }
+
   // Invokes Step methods in StepDefinition
   protected Statement childrenInvoker(final RunNotifier notifier) {
 
@@ -60,87 +127,23 @@ public class PepperRunner extends BlockJUnit4ClassRunner {
         try {
           File file = new File(path);
           Scanner scanner = new Scanner(file); // <- FileNotFoundException
-          String step;
+          String line;
           FrameworkMethod method;
-          StringTokenizer stepTokenizer, keyTokenizer;
-          String keyToken, stepToken;
 
           while (scanner.hasNextLine()) {
-            step = scanner.nextLine().trim();
+            line = scanner.nextLine().trim();
 
-            // skip empty lines
-            if(step.isEmpty()) {
-              continue; // with reading the feature file
-            }
-
-            if (step.startsWith("Scenario:")) {
-              // need to create a new instance of StepDefinition so variables are in initial state
+            if (line.startsWith("Scenario:")) {
               newStepDefinition();
             }
-            else if (step.startsWith("Given") || step.startsWith("When") || step.startsWith("Then")) {
-              // handle Given-When-Then step
-              if ((method = map.get(step)) != null) {
-                PepperRunner.this.runChild(method, notifier);
+            else if (line.startsWith("Given") || line.startsWith("When") || line.startsWith("Then")) {
+              method = extractMethod(line);
+
+              if (method == null) {
+                generateStub(line);
               }
               else {
-                // check if step is parameterized
-                // Note: Users should expect parameterized steps to take a little longer to process.
-                boolean found = false;
-
-                // for each step method in the StepDefinition subclass
-                for (String key : map.keySet()) {
-                  params.clear();
-                  keyTokenizer = new StringTokenizer(key);
-                  stepTokenizer = new StringTokenizer(step);
-
-                  // iterate over each word in the step method and in the line of the feature file
-                  while (keyTokenizer.hasMoreTokens() && stepTokenizer.hasMoreTokens()) {
-                    keyToken = keyTokenizer.nextToken();
-                    stepToken = stepTokenizer.nextToken();
-
-                    // if word in step method begins with $ then it must be variable placeholder
-                    if (keyToken.startsWith("$")) {
-                      try {
-                        params.add(Integer.parseInt(stepToken));
-                      }
-                      catch (NumberFormatException numberFormat) {
-                        numberFormat.printStackTrace();
-                      }
-                    }
-                    // else if it's not a variable placeholder
-                    // and it doesn't match with word in the given line of the feature file,
-                    // then don't invoke the method corresponding to this key
-                    if (keyToken.equals(stepToken)) {
-                      break; // from while-loop
-                    }
-                  }
-
-                  // if there are no more words in either the line or the step method
-                  if (!keyTokenizer.hasMoreTokens() && !stepTokenizer.hasMoreTokens()) {
-                    // then invoke the corresponding to this key
-                    method = map.get(key);
-
-                    PepperRunner.this.runChild(method, notifier);
-                    found = true;
-                    break; // from for-each loop
-                  }
-                }
-
-                // if step method was not found, then generate a method stub for it
-                if (!found) {
-                  System.out.println("@Pending");
-                  if (step.startsWith("Given")) {
-                    System.out.print("@Given(");
-                  }
-                  else if (step.startsWith("When")) {
-                    System.out.print("@When(");
-                  }
-                  else if (step.startsWith("Then")) {
-                    System.out.print("@Then(");
-                  }
-                  System.out.println(step + ")");
-                  System.out.println();
-                }
+                PepperRunner.this.runChild(method, notifier);
               }
             }
           }
