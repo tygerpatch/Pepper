@@ -117,6 +117,7 @@ public class PepperRunner extends BlockJUnit4ClassRunner {
   }
 
   // Invokes Step methods in StepDefinition
+  @Override
   protected Statement childrenInvoker(final RunNotifier notifier) {
 
     newStepDefinition();
@@ -157,6 +158,7 @@ public class PepperRunner extends BlockJUnit4ClassRunner {
   }
 
   @Deprecated
+  @Override
   protected void validateInstanceMethods(List<Throwable> errors) {
     // This method is called by collectInitializationErrors(List<Throwable> errors),
     // which is called by validate() method,
@@ -169,6 +171,7 @@ public class PepperRunner extends BlockJUnit4ClassRunner {
   private Map<String, FrameworkMethod> map = new HashMap<String, FrameworkMethod>();
 
   // This method returns a list of all the Given-When-Then step methods in the StepDefinition.
+  @Override
   protected List<FrameworkMethod> computeTestMethods() {
     List<FrameworkMethod> list = new ArrayList<FrameworkMethod>();
     TestClass testClass = this.getTestClass();
@@ -200,6 +203,7 @@ public class PepperRunner extends BlockJUnit4ClassRunner {
   List<Object> params = new ArrayList<Object>();
 
   // Invokes a Step method
+  @Override
   protected Statement methodBlock(final FrameworkMethod method) {
 
     return new Statement() {
