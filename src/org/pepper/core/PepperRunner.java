@@ -150,6 +150,7 @@ public class PepperRunner extends BlockJUnit4ClassRunner {
   protected Statement childrenInvoker(final RunNotifier notifier) {
 
     newStepDefinition();
+    notifier.addListener(new PepperRunnerListener());
 
     return new Statement() {
       @Override
@@ -165,6 +166,7 @@ public class PepperRunner extends BlockJUnit4ClassRunner {
 
             if (line.startsWith("Scenario:")) {
               newStepDefinition();
+              System.out.println(line);
             }
             else if (line.startsWith("Given") || line.startsWith("When") || line.startsWith("Then")) {
               method = extractMethod(line);
@@ -173,8 +175,12 @@ public class PepperRunner extends BlockJUnit4ClassRunner {
                 generateStub(line);
               }
               else {
+                System.out.print(line);
                 PepperRunner.this.runChild(method, notifier);
               }
+            }
+            else {
+              System.out.println(line);
             }
           }
           scanner.close();
