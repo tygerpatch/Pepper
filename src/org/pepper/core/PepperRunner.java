@@ -10,6 +10,7 @@ import java.util.Map;
 import java.util.Scanner;
 import java.util.StringTokenizer;
 
+import org.junit.runner.Description;
 import org.junit.runner.notification.RunNotifier;
 import org.junit.runners.BlockJUnit4ClassRunner;
 import org.junit.runners.model.FrameworkMethod;
@@ -17,6 +18,7 @@ import org.junit.runners.model.InitializationError;
 import org.junit.runners.model.Statement;
 import org.junit.runners.model.TestClass;
 import org.pepper.core.annotations.Given;
+import org.pepper.core.annotations.Pending;
 import org.pepper.core.annotations.Then;
 import org.pepper.core.annotations.When;
 
@@ -240,5 +242,18 @@ public class PepperRunner extends BlockJUnit4ClassRunner {
         method.invokeExplosively(stepDef, params.toArray());
       }
     };
+  }
+
+  @Override
+  protected void runChild(final FrameworkMethod method, RunNotifier notifier) {
+    Description description = describeChild(method);
+
+    // if (method.getAnnotation(Ignore.class) != null) {   // <- BlockJUnit4ClassRunner's version
+    if (method.getAnnotation(Pending.class) != null) {
+      notifier.fireTestIgnored(description);
+    }
+    else {
+      runLeaf(methodBlock(method), description, notifier);
+    }
   }
 }
