@@ -3,6 +3,7 @@ package org.pepper.core;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -53,53 +54,94 @@ public class PepperRunner extends BlockJUnit4ClassRunner {
 
   // Given a line in the feature file, it returns the proper Step method in the StepDefinitions file to call
   public FrameworkMethod extractMethod(String line) {
-    // handle Given-When-Then step
-    FrameworkMethod method = map.get(line);
+    List<FrameworkMethod> methodList = map.get(line);
 
-    if (method != null) {
-      return method;
+    // *** handle non-parameterized Given-When-Then step
+    if((methodList != null) && (methodList.size() == 1)) {
+      return methodList.get(0);
     }
+
+    // *** look for a parameterized version, with the correct type of parameters
+    // Note: Users should expect parameterized steps to take a little longer to process.
 
     StringTokenizer stepTokenizer, keyTokenizer;
     String keyToken, stepToken;
 
-    // *** check if step is parameterized
-    // Note: Users should expect parameterized steps to take a little longer to process.
-
-    // for each step method in the StepDefinition subclass
+    // for each defined step
     for (String key : map.keySet()) {
+
       params.clear();
 
+      // iterate over each word in the step method and in the line of the feature file
       keyTokenizer = new StringTokenizer(key);
       stepTokenizer = new StringTokenizer(line);
 
-      // iterate over each word in the step method and in the line of the feature file
       while (keyTokenizer.hasMoreTokens() && stepTokenizer.hasMoreTokens()) {
         keyToken = keyTokenizer.nextToken();
         stepToken = stepTokenizer.nextToken();
 
         // if the word in the given line of the feature file doesn't match up with the word in the step
-        if(!keyToken.equals(stepToken)) {
+        if (!keyToken.equals(stepToken)) {
+          if (!keyToken.startsWith("$")) {
+            break; // from while loop
+          }
           // if word in step method begins with $ then it must be variable placeholder
           if (keyToken.startsWith("$")) {
             try {
-              params.add(Integer.parseInt(stepToken));
+              params.add(Integer.valueOf(stepToken));
             }
-            catch (NumberFormatException numberFormat) {
-              // numberFormat.printStackTrace(); // TODO: should exception be logged
-              params.add(Boolean.valueOf(stepToken));
+            catch (NumberFormatException intNumberFormat) {
+              // TODO: should exception be logged
+              try {
+                params.add(Double.valueOf(stepToken));
+              }
+              catch (NumberFormatException dblNumberFormat) {
+                // TODO: should exception be logged
+                params.add(Boolean.valueOf(stepToken));
+              }
             }
           }
-          break; // from while-loop
         }
-      }
+      } // end of while loop
 
       // if there are no more words in either the line or the step method
       if (!keyTokenizer.hasMoreTokens() && !stepTokenizer.hasMoreTokens()) {
-        // then invoke the corresponding to this key
-        return map.get(key);
+        Method method;
+        Class<?>[] parameterTypes;
+
+        // for each of the FrameworkMethod(s) associated with this step
+        withNextMethod:
+        for(FrameworkMethod frameworkMethod : map.get(key)) {
+
+          // get info the method associated with this step
+          method = frameworkMethod.getMethod();
+          parameterTypes = method.getParameterTypes();
+
+          // ensure that parameter types match up
+          for(int i = 0; (i < params.size()) && (i < parameterTypes.length); i++) {
+            switch(parameterTypes[i].getCanonicalName()) {
+              case "int":
+                if(!"class java.lang.Integer".equalsIgnoreCase(params.get(i).getClass().toString())) {
+                  continue withNextMethod;
+                }
+                break;
+              case "double":
+                if(!"class java.lang.Double".equalsIgnoreCase(params.get(i).getClass().toString())) {
+                  continue withNextMethod;
+                }
+                break;
+              case "boolean":
+                if(!"class java.lang.Boolean".equalsIgnoreCase(params.get(i).getClass().toString())) {
+                  continue withNextMethod;
+                }
+                break;
+            }
+          }
+
+          return frameworkMethod;
+        }
       }
-    }
+    } // end for (String key : map.keySet()) {
 
     return null;
   }
@@ -205,33 +247,54 @@ public class PepperRunner extends BlockJUnit4ClassRunner {
     // The JUnit API says this method will go away in the future. So I think it's safe to comment out.
   }
 
-  private Map<String, FrameworkMethod> map = new HashMap<String, FrameworkMethod>();
+  private Map<String, List<FrameworkMethod>> map = new HashMap<String, List<FrameworkMethod>>();
 
   // This method returns a list of all the Given-When-Then step methods in the StepDefinition.
   @Override
   protected List<FrameworkMethod> computeTestMethods() {
     List<FrameworkMethod> list = new ArrayList<FrameworkMethod>();
     TestClass testClass = this.getTestClass();
+    List<FrameworkMethod> methodList;
+    String str;
 
     for (FrameworkMethod method : testClass.getAnnotatedMethods(Given.class)) {
       list.add(method);
 
       Given given = method.getAnnotation(Given.class);
-      map.put("Given " + given.value(), method);
+      str = "Given " + given.value();
+      methodList = map.get(str);
+      if(methodList == null) {
+        methodList = new ArrayList<FrameworkMethod>();
+      }
+      methodList.add(method);
+      map.put(str, methodList);
     }
 
     for (FrameworkMethod method : testClass.getAnnotatedMethods(When.class)) {
       list.add(method);
 
       When when = method.getAnnotation(When.class);
-      map.put("When " + when.value(), method);
+      str = "When " + when.value();
+      methodList = map.get(str);
+      if(methodList == null) {
+        methodList = new ArrayList<FrameworkMethod>();
+      }
+      methodList.add(method);
+      map.put(str, methodList);
     }
 
     for (FrameworkMethod method : testClass.getAnnotatedMethods(Then.class)) {
       list.add(method);
 
       Then then = method.getAnnotation(Then.class);
-      map.put("Then " + then.value(), method);
+      str = "Then " + then.value();
+      methodList = map.get(str);
+      if(methodList == null) {
+        methodList = new ArrayList<FrameworkMethod>();
+      }
+      methodList.add(method);
+
+      map.put(str, methodList);
     }
 
     return list;
