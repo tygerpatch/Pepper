@@ -26,4 +26,20 @@ public class ParameterizedStepDefinition extends StepDefinition {
   public void then(int value) {
     assertThat(x, equalTo(value));
   }
+
+  private boolean flag;
+
+  @Given("the flag is $value")
+  public void givenTheFlagIsFalse(boolean value) {
+    flag = value;
+  }
+
+  @When("I check the flag")
+  public void whenICheckTheFlag() {
+  }
+
+  @Then("it should be $value")
+  public void thenItShouldBeFalse(boolean value) {
+    assertThat(flag, equalTo(value));
+  }
 }

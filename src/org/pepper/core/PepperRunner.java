@@ -86,7 +86,8 @@ public class PepperRunner extends BlockJUnit4ClassRunner {
               params.add(Integer.parseInt(stepToken));
             }
             catch (NumberFormatException numberFormat) {
-              numberFormat.printStackTrace();
+              // numberFormat.printStackTrace(); // TODO: should exception be logged
+              params.add(Boolean.valueOf(stepToken));
             }
           }
           break; // from while-loop
@@ -169,6 +170,7 @@ public class PepperRunner extends BlockJUnit4ClassRunner {
               System.out.println(line);
             }
             else if (line.startsWith("Given") || line.startsWith("When") || line.startsWith("Then")) {
+              params.clear();
               method = extractMethod(line);
 
               if (method == null) {
