@@ -2,6 +2,7 @@ package org.pepper.core;
 
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.lang.annotation.Annotation;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
@@ -51,6 +52,100 @@ public class PepperRunner extends BlockJUnit4ClassRunner {
       instantiation.printStackTrace();
     }
   }
+
+//  public FrameworkMethod getStep(String line, Annotation stepType) {
+//    TestClass testClass = this.getTestClass();
+//
+//    for (FrameworkMethod frameworkMethod : testClass.getAnnotatedMethods(stepType.class)) {
+//      if (frameworkMethod.getAnnotation(Pending.class) == null) {
+//
+//        Given given = method.getAnnotation(Given.class);
+//        str = "Given " + given.value();
+//        methodList = map.get(str);
+//        if(methodList == null) {
+//          methodList = new ArrayList<FrameworkMethod>();
+//        }
+//        methodList.add(method);
+//        map.put(str, methodList);
+//
+//      }
+//    }
+//  }
+
+//  public FrameworkMethod extractMethod(String line) {
+//    List<FrameworkMethod> frameworkMethods = new ArrayList<FrameworkMethod>();
+//    List<String> steps = new ArrayList<String>();
+//
+//    if(line.startsWith("Given")) {
+//      // return getStep(line);
+//      frameworkMethods = getStepMethods(Given.class);
+//    }
+//    else if(line.startsWith("When")) {
+//      frameworkMethods = getStepMethods(When.class);
+//    }
+//    else if(line.startsWith("Then")) {
+//      frameworkMethods = getStepMethods(Then.class);
+//    }
+//
+//    StringTokenizer stepTokenizer, lineTokenizer;
+//    String stepToken, lineToken;
+//    FrameworkMethod frameworkMethod;
+//    Method method;
+//
+//    outer:
+//    for (int i = 0; (i < frameworkMethods.size()) && (i < steps.size()); i++) {
+//      params.clear();
+//
+//      frameworkMethod = frameworkMethods.get(i);
+//
+//      stepTokenizer = new StringTokenizer(steps.get(i));
+//      lineTokenizer = new StringTokenizer(line);
+//
+//      // iterate over each word in method and line
+//      while(stepTokenizer.hasMoreTokens() && lineTokenizer.hasMoreTokens()) {
+//        stepToken = stepTokenizer.nextToken();
+//        lineToken = lineTokenizer.nextToken();
+//
+//        // if both words don't match
+//        if(!stepToken.equals(lineToken)) {
+//          // if word in method isn't a placeholder, continue with next method
+//          if(!stepToken.startsWith("$")) {
+//            continue outer;
+//          }
+//
+//          // if the given argument type does not match up with the expected argument, continue with next method
+//          try {
+//            params.add(Integer.valueOf(stepToken));
+//            if("int" != frameworkMethod.getMethod().getParameterTypes()[params.size()].getCanonicalName()) {
+//              continue outer;
+//            }
+//          }
+//          catch (NumberFormatException intNumberFormat) {
+//            // TODO: should exception be logged
+//            try {
+//              params.add(Double.valueOf(stepToken));
+//              if("double" != frameworkMethod.getMethod().getParameterTypes()[params.size()].getCanonicalName()) {
+//                continue outer;
+//              }
+//            }
+//            catch (NumberFormatException dblNumberFormat) {
+//              // TODO: should exception be logged
+//              params.add(Boolean.valueOf(stepToken));
+//              if("boolean" != frameworkMethod.getMethod().getParameterTypes()[params.size()].getCanonicalName()) {
+//                continue outer;
+//              }
+//            }
+//          }
+//        } // end of if(!stepToken.equals(lineToken)) {
+//      } // end of while(stepTokenizer.hasMoreTokens() && lineTokenizer.hasMoreTokens()) {
+//
+//      if(!stepTokenizer.hasMoreTokens() && !lineTokenizer.hasMoreTokens()) {
+//        return frameworkMethod;
+//      }
+//    } // for(FrameworkMethod frameworkMethod : list) {
+//
+//    return null;
+//  }
 
   // Given a line in the feature file, it returns the proper Step method in the StepDefinitions file to call
   public FrameworkMethod extractMethod(String line) {
@@ -147,21 +242,36 @@ public class PepperRunner extends BlockJUnit4ClassRunner {
     return null;
   }
 
-  public void generateStub(String line) {
-    System.out.println("@Pending");
+  public static String generateStub(String line) {
+    StringBuilder strBuilder = new StringBuilder();
+
+    // System.out.println("@Pending");
+    strBuilder.append("@Pending\n");
 
     // Given = 5 characters long
     // When = 4 characters long
     // Then = 4 characters long
     int length = line.startsWith("Given") ? 5 : 4;
-    System.out.println("@" + line.substring(0, length) + "(\"" + line.substring(length + 1) + "\")");
 
-    System.out.println("public void " + StringUtils.camelCase(line) + "() {");
-    System.out.println("}");
-    System.out.println();
+    // System.out.println("@" + line.substring(0, length) + "(\"" + line.substring(length + 1) + "\")");
+    strBuilder.append("@");
+    strBuilder.append(line.substring(0, length));
+    strBuilder.append("(\"");
+    strBuilder.append(line.substring(length + 1));
+    strBuilder.append("\")\n");
 
-    // TODO: this could easily be made testable by returning a String containing the output
-    // TODO: write test to ensure someone doesn't do something like "giventhat x is 3"
+    // System.out.println("public void " + StringUtils.camelCase(line) + "() {");
+    strBuilder.append("public void ");
+    strBuilder.append(StringUtils.camelCase(line));
+    strBuilder.append("() {\n");
+
+    // System.out.println("}\n");
+    strBuilder.append("}\n");
+
+    // Note: This method returns a String so it can be tested.
+    // I left the System.out.println statements, because they're slightly easier to read.
+
+    return strBuilder.toString();
   }
 
   // Invokes Step methods in StepDefinition
@@ -188,7 +298,7 @@ public class PepperRunner extends BlockJUnit4ClassRunner {
               method = extractMethod(line);
 
               if (method == null) {
-                generateStub(line);
+                System.out.println(generateStub(line));
               }
               else {
                 listener.setLine(line);
@@ -322,21 +432,6 @@ public class PepperRunner extends BlockJUnit4ClassRunner {
     return list;
   }
 
-  // -------------------
-  // TODO:
-
-  // "I have $value"
-  // - "int"
-  // - "double"
-
-  // @Given("I have $value")
-  // public void given(int value) {
-
-  // @Given("I have $value")
-  // public void givenDbl(double value) {
-
-  // givenMap, whenMap, thenMap
-  // -------------------
   List<Object> params = new ArrayList<Object>();
 
   // Invokes a Step method
