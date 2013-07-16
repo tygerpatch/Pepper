@@ -4,9 +4,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Scanner;
 import java.util.StringTokenizer;
 
@@ -279,101 +277,27 @@ public class PepperRunner extends BlockJUnit4ClassRunner {
     // The JUnit API says this method will go away in the future. So I think it's safe to comment out.
   }
 
-  private Map<String, List<FrameworkMethod>> map = new HashMap<String, List<FrameworkMethod>>();
-
-  // computeTestMethod is called by getChildren
-  // getChildren is an overridden method
-  // computeTestMethod is not overridden
-
-//  @Override
-//  protected List<FrameworkMethod> getChildren() {
-//    // return computeTestMethods();
-//    // --
-//    // TODO: create tests for this method
-//    List<FrameworkMethod> list = new ArrayList<FrameworkMethod>();
-//    TestClass testClass = this.getTestClass();
-//
-//    for (FrameworkMethod method : testClass.getAnnotatedMethods(Given.class)) {
-//      if(method.getAnnotation(Pending.class) != null) {
-//        list.add(method);
-//      }
-//    }
-//
-//    for (FrameworkMethod method : testClass.getAnnotatedMethods(When.class)) {
-//      if(method.getAnnotation(Pending.class) != null) {
-//        list.add(method);
-//      }
-//    }
-//
-//    for (FrameworkMethod method : testClass.getAnnotatedMethods(Then.class)) {
-//      if(method.getAnnotation(Pending.class) != null) {
-//        list.add(method);
-//      }
-//    }
-//    // TODO: refactor this method to something like the following
-//    // addStepMethods(list, testClass, Given)
-//    // addStepMethods(list, testClass, When)
-//    // addStepMethods(list, testClass, Then)
-//
-//    return list;
-//  }
-
-  // TODO: figure out how to get this method to work
-  // TODO: test this method
-//  public void addStepMethods(List<FrameworkMethod> list, TestClass testClass, StepType stepType) {
-//    for (FrameworkMethod method : testClass.getAnnotatedMethods(StepType.class)) {
-//      if(method.getAnnotation(Pending.class) != null) {
-//        list.add(method);
-//      }
-//    }
-//  }
-
-  // This method returns a list of all the Given-When-Then step methods in the StepDefinition.
   @Override
-  protected List<FrameworkMethod> computeTestMethods() {
+  protected List<FrameworkMethod> getChildren() {
     List<FrameworkMethod> list = new ArrayList<FrameworkMethod>();
     TestClass testClass = this.getTestClass();
-    List<FrameworkMethod> methodList;
-    String str;
 
     for (FrameworkMethod method : testClass.getAnnotatedMethods(Given.class)) {
-      list.add(method);
-
-      Given given = method.getAnnotation(Given.class);
-      str = "Given " + given.value();
-      methodList = map.get(str);
-      if(methodList == null) {
-        methodList = new ArrayList<FrameworkMethod>();
+      if(method.getAnnotation(Pending.class) != null) {
+        list.add(method);
       }
-      methodList.add(method);
-      map.put(str, methodList);
     }
 
     for (FrameworkMethod method : testClass.getAnnotatedMethods(When.class)) {
-      list.add(method);
-
-      When when = method.getAnnotation(When.class);
-      str = "When " + when.value();
-      methodList = map.get(str);
-      if(methodList == null) {
-        methodList = new ArrayList<FrameworkMethod>();
+      if(method.getAnnotation(Pending.class) != null) {
+        list.add(method);
       }
-      methodList.add(method);
-      map.put(str, methodList);
     }
 
     for (FrameworkMethod method : testClass.getAnnotatedMethods(Then.class)) {
-      list.add(method);
-
-      Then then = method.getAnnotation(Then.class);
-      str = "Then " + then.value();
-      methodList = map.get(str);
-      if(methodList == null) {
-        methodList = new ArrayList<FrameworkMethod>();
+      if(method.getAnnotation(Pending.class) != null) {
+        list.add(method);
       }
-      methodList.add(method);
-
-      map.put(str, methodList);
     }
 
     return list;
