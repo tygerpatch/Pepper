@@ -28,4 +28,26 @@ public class StringUtils {
 
     return strBuilder.toString();
   }
+
+  // ex. "Given a variable x with value 3" -> givenAVariableXWithValue3
+  public static String camelCase(String str) {
+    StringBuilder strBuilder = new StringBuilder();
+    boolean isNewWord = false;
+    // Notice that the first letter is always lower cased
+
+    for(char ch : str.toCharArray()) {
+      if(isNewWord) {
+        strBuilder.append(Character.toUpperCase(ch));
+        isNewWord = false;
+      }
+      else if((ch == ' ') || (ch == '\t')) {
+        isNewWord = true;
+      }
+      else {
+        strBuilder.append(Character.toLowerCase(ch));
+      }
+    }
+
+    return strBuilder.toString();
+  }
 }
