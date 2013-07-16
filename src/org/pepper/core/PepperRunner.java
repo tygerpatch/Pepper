@@ -148,42 +148,14 @@ public class PepperRunner extends BlockJUnit4ClassRunner {
 
   public void generateStub(String line) {
     System.out.println("@Pending");
-    if (line.startsWith("Given")) {
-      System.out.print("@Given(\"");
-      System.out.print(line.substring(6));
-      System.out.println("\")");
-    }
-    else if (line.startsWith("When")) {
-      System.out.print("@When(\"");
-      System.out.print(line.substring(5));
-      System.out.println("\")");
-    }
-    else if (line.startsWith("Then")) {
-      System.out.print("@Then(\"");
-      System.out.print(line.substring(5));
-      System.out.println("\")");
-    }
 
-    System.out.print("public void ");
-    char ch;
-    boolean isNewWord = false;
-    for(int index = 0; index < line.length(); index++) {
-      ch = line.charAt(index);
+    // Given = 5 characters long
+    // When = 4 characters long
+    // Then = 4 characters long
+    int length = line.startsWith("Given") ? 5 : 4;
+    System.out.println("@" + line.substring(0, length) + "(\"" + line.substring(length + 1) + "\")");
 
-      if(isNewWord) {
-        ch = Character.toUpperCase(ch);
-        System.out.print(ch);
-        isNewWord = false;
-      }
-      else if((ch == ' ') || (ch == '\t')) {
-        isNewWord = true;
-      }
-      else {
-        ch = Character.toLowerCase(ch);
-        System.out.print(ch);
-      }
-    }
-    System.out.println("() {");
+    System.out.println("public void " + StringUtils.camelCase(line) + "() {");
     System.out.println("}");
     System.out.println();
   }
