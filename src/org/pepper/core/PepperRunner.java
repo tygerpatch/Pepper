@@ -2,9 +2,7 @@ package org.pepper.core;
 
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.lang.annotation.Annotation;
 import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -53,193 +51,120 @@ public class PepperRunner extends BlockJUnit4ClassRunner {
     }
   }
 
-//  public FrameworkMethod getStep(String line, Annotation stepType) {
-//    TestClass testClass = this.getTestClass();
-//
-//    for (FrameworkMethod frameworkMethod : testClass.getAnnotatedMethods(stepType.class)) {
-//      if (frameworkMethod.getAnnotation(Pending.class) == null) {
-//
-//        Given given = method.getAnnotation(Given.class);
-//        str = "Given " + given.value();
-//        methodList = map.get(str);
-//        if(methodList == null) {
-//          methodList = new ArrayList<FrameworkMethod>();
-//        }
-//        methodList.add(method);
-//        map.put(str, methodList);
-//
-//      }
-//    }
-//  }
+  public FrameworkMethod getGivenStepMethod(String line) {
+    String step;
+    Class<?>[] parameterTypes;
 
-//  public FrameworkMethod extractMethod(String line) {
-//    List<FrameworkMethod> frameworkMethods = new ArrayList<FrameworkMethod>();
-//    List<String> steps = new ArrayList<String>();
-//
-//    if(line.startsWith("Given")) {
-//      // return getStep(line);
-//      frameworkMethods = getStepMethods(Given.class);
-//    }
-//    else if(line.startsWith("When")) {
-//      frameworkMethods = getStepMethods(When.class);
-//    }
-//    else if(line.startsWith("Then")) {
-//      frameworkMethods = getStepMethods(Then.class);
-//    }
-//
-//    StringTokenizer stepTokenizer, lineTokenizer;
-//    String stepToken, lineToken;
-//    FrameworkMethod frameworkMethod;
-//    Method method;
-//
-//    outer:
-//    for (int i = 0; (i < frameworkMethods.size()) && (i < steps.size()); i++) {
-//      params.clear();
-//
-//      frameworkMethod = frameworkMethods.get(i);
-//
-//      stepTokenizer = new StringTokenizer(steps.get(i));
-//      lineTokenizer = new StringTokenizer(line);
-//
-//      // iterate over each word in method and line
-//      while(stepTokenizer.hasMoreTokens() && lineTokenizer.hasMoreTokens()) {
-//        stepToken = stepTokenizer.nextToken();
-//        lineToken = lineTokenizer.nextToken();
-//
-//        // if both words don't match
-//        if(!stepToken.equals(lineToken)) {
-//          // if word in method isn't a placeholder, continue with next method
-//          if(!stepToken.startsWith("$")) {
-//            continue outer;
-//          }
-//
-//          // if the given argument type does not match up with the expected argument, continue with next method
-//          try {
-//            params.add(Integer.valueOf(stepToken));
-//            if("int" != frameworkMethod.getMethod().getParameterTypes()[params.size()].getCanonicalName()) {
-//              continue outer;
-//            }
-//          }
-//          catch (NumberFormatException intNumberFormat) {
-//            // TODO: should exception be logged
-//            try {
-//              params.add(Double.valueOf(stepToken));
-//              if("double" != frameworkMethod.getMethod().getParameterTypes()[params.size()].getCanonicalName()) {
-//                continue outer;
-//              }
-//            }
-//            catch (NumberFormatException dblNumberFormat) {
-//              // TODO: should exception be logged
-//              params.add(Boolean.valueOf(stepToken));
-//              if("boolean" != frameworkMethod.getMethod().getParameterTypes()[params.size()].getCanonicalName()) {
-//                continue outer;
-//              }
-//            }
-//          }
-//        } // end of if(!stepToken.equals(lineToken)) {
-//      } // end of while(stepTokenizer.hasMoreTokens() && lineTokenizer.hasMoreTokens()) {
-//
-//      if(!stepTokenizer.hasMoreTokens() && !lineTokenizer.hasMoreTokens()) {
-//        return frameworkMethod;
-//      }
-//    } // for(FrameworkMethod frameworkMethod : list) {
-//
-//    return null;
-//  }
+    for (FrameworkMethod frameworkMethod : getTestClass().getAnnotatedMethods(Given.class)) {
+      if (frameworkMethod.getAnnotation(Pending.class) == null) {
+        step = (frameworkMethod.getAnnotation(Given.class)).value();
+        parameterTypes = frameworkMethod.getMethod().getParameterTypes();
 
-  // Given a line in the feature file, it returns the proper Step method in the StepDefinitions file to call
-  public FrameworkMethod extractMethod(String line) {
-    List<FrameworkMethod> methodList = map.get(line);
-    params.clear();
-
-    // *** handle non-parameterized Given-When-Then step
-    if((methodList != null) && (methodList.size() == 1)) {
-      return methodList.get(0);
-    }
-
-    // *** look for a parameterized version, with the correct type of parameters
-    // Note: Users should expect parameterized steps to take a little longer to process.
-
-    StringTokenizer stepTokenizer, keyTokenizer;
-    String keyToken, stepToken;
-
-    // for each defined step
-    for (String key : map.keySet()) {
-
-      params.clear();
-
-      // iterate over each word in the step method and in the line of the feature file
-      keyTokenizer = new StringTokenizer(key);
-      stepTokenizer = new StringTokenizer(line);
-
-      while (keyTokenizer.hasMoreTokens() && stepTokenizer.hasMoreTokens()) {
-        keyToken = keyTokenizer.nextToken();
-        stepToken = stepTokenizer.nextToken();
-
-        // if the word in the given line of the feature file doesn't match up with the word in the step
-        if (!keyToken.equals(stepToken)) {
-          if (!keyToken.startsWith("$")) {
-            break; // from while loop
-          }
-          // if word in step method begins with $ then it must be variable placeholder
-          if (keyToken.startsWith("$")) {
-            try {
-              params.add(Integer.valueOf(stepToken));
-            }
-            catch (NumberFormatException intNumberFormat) {
-              // TODO: should exception be logged
-              try {
-                params.add(Double.valueOf(stepToken));
-              }
-              catch (NumberFormatException dblNumberFormat) {
-                // TODO: should exception be logged
-                params.add(Boolean.valueOf(stepToken));
-              }
-            }
-          }
-        }
-      } // end of while loop
-
-      // if there are no more words in either the line or the step method
-      if (!keyTokenizer.hasMoreTokens() && !stepTokenizer.hasMoreTokens()) {
-        Method method;
-        Class<?>[] parameterTypes;
-
-        // for each of the FrameworkMethod(s) associated with this step
-        withNextMethod:
-        for(FrameworkMethod frameworkMethod : map.get(key)) {
-
-          // get info the method associated with this step
-          method = frameworkMethod.getMethod();
-          parameterTypes = method.getParameterTypes();
-
-          // ensure that parameter types match up
-          for(int i = 0; (i < params.size()) && (i < parameterTypes.length); i++) {
-            switch(parameterTypes[i].getCanonicalName()) {
-              case "int":
-                if(!"class java.lang.Integer".equalsIgnoreCase(params.get(i).getClass().toString())) {
-                  continue withNextMethod;
-                }
-                break;
-              case "double":
-                if(!"class java.lang.Double".equalsIgnoreCase(params.get(i).getClass().toString())) {
-                  continue withNextMethod;
-                }
-                break;
-              case "boolean":
-                if(!"class java.lang.Boolean".equalsIgnoreCase(params.get(i).getClass().toString())) {
-                  continue withNextMethod;
-                }
-                break;
-            }
-          }
-
+        if(checkMethod(parameterTypes, step, line)) {
           return frameworkMethod;
         }
       }
-    } // end for (String key : map.keySet()) {
+    }
 
     return null;
+  }
+
+  public FrameworkMethod getWhenStepMethod(String line) {
+    String step;
+    Class<?>[] parameterTypes;
+
+    for (FrameworkMethod frameworkMethod : getTestClass().getAnnotatedMethods(When.class)) {
+      if (frameworkMethod.getAnnotation(Pending.class) == null) {
+        step = (frameworkMethod.getAnnotation(When.class)).value();
+        parameterTypes = frameworkMethod.getMethod().getParameterTypes();
+
+        if(checkMethod(parameterTypes, step, line)) {
+          return frameworkMethod;
+        }
+      }
+    }
+
+    return null;
+  }
+
+  public FrameworkMethod getThenStepMethod(String line) {
+    String step;
+    Class<?>[] parameterTypes;
+
+    for (FrameworkMethod frameworkMethod : getTestClass().getAnnotatedMethods(Then.class)) {
+      if (frameworkMethod.getAnnotation(Pending.class) == null) {
+        step = (frameworkMethod.getAnnotation(Then.class)).value();
+        parameterTypes = frameworkMethod.getMethod().getParameterTypes();
+
+        if(checkMethod(parameterTypes, step, line)) {
+          return frameworkMethod;
+        }
+      }
+    }
+
+    return null;
+  }
+
+  public boolean checkMethod(Class<?>[] parameterTypes, String step, String line) {
+    params.clear();
+
+    StringTokenizer stepTokenizer = new StringTokenizer(step);
+    StringTokenizer lineTokenizer = new StringTokenizer(line);
+
+    String stepToken, lineToken;
+
+    // iterate over each word in method and line
+    while (stepTokenizer.hasMoreTokens() && lineTokenizer.hasMoreTokens()) {
+      stepToken = stepTokenizer.nextToken();
+      lineToken = lineTokenizer.nextToken();
+
+      // if both words don't match
+      if (!stepToken.equals(lineToken)) {
+        // if word in method isn't a placeholder, continue with next method
+        if (!stepToken.startsWith("$")) {
+          return false;
+        }
+
+        // if the given argument type does not match up with the expected argument, continue with next method
+        try {
+          params.add(Integer.valueOf(lineToken));
+
+          if (params.size() <= parameterTypes.length) {
+            if (!parameterTypes[params.size() - 1].getCanonicalName().equals("int")) {
+              return false;
+            }
+          }
+        }
+        catch (NumberFormatException intNumberFormat) {
+          // TODO: should exception be logged
+          try {
+            params.add(Double.valueOf(lineToken));
+
+            if (params.size() <= parameterTypes.length) {
+              if (!parameterTypes[params.size() - 1].getCanonicalName().equals("double")) {
+                return false;
+              }
+            }
+          }
+          catch (NumberFormatException dblNumberFormat) {
+            // TODO: should exception be logged
+            params.add(Boolean.valueOf(lineToken));
+
+            if (params.size() <= parameterTypes.length) {
+              if (!parameterTypes[params.size() - 1].getCanonicalName().equals("boolean")) {
+                return false;
+              }
+            }
+          }
+        }
+      }
+    }
+
+    if (!stepTokenizer.hasMoreTokens() && !lineTokenizer.hasMoreTokens()) {
+      return true;
+    }
+
+    return false;
   }
 
   public static String generateStub(String line) {
@@ -294,8 +219,30 @@ public class PepperRunner extends BlockJUnit4ClassRunner {
           while (scanner.hasNextLine()) {
             line = scanner.nextLine().trim();
 
-            if (line.startsWith("Given") || line.startsWith("When") || line.startsWith("Then")) {
-              method = extractMethod(line);
+            if(line.startsWith("Given")) {
+              method = getGivenStepMethod(line.substring(5));
+
+              if (method == null) {
+                System.out.println(generateStub(line));
+              }
+              else {
+                listener.setLine(line);
+                PepperRunner.this.runChild(method, notifier);
+              }
+            }
+            else if(line.startsWith("When")) {
+              method = getWhenStepMethod(line.substring(4));
+
+              if (method == null) {
+                System.out.println(generateStub(line));
+              }
+              else {
+                listener.setLine(line);
+                PepperRunner.this.runChild(method, notifier);
+              }
+            }
+            else if(line.startsWith("Then")) {
+              method = getThenStepMethod(line.substring(4));
 
               if (method == null) {
                 System.out.println(generateStub(line));
