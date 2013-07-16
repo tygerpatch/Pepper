@@ -6,7 +6,12 @@ import org.junit.runner.notification.RunListener;
 
 public class PepperRunnerListener extends RunListener {
 
+  protected String line;
   protected boolean isRunFinished;
+
+  public void setLine(String line) {
+    this.line = line;
+  }
 
   @Override
   public void testRunStarted(Description description) throws Exception {
@@ -16,7 +21,7 @@ public class PepperRunnerListener extends RunListener {
 
   @Override
   public void testFailure(Failure failure) throws Exception {
-    System.out.println(" (FAILED)");
+    System.out.println(line + " (FAILED)");
     isRunFinished = true;
     super.testFailure(failure);
   }
@@ -25,14 +30,14 @@ public class PepperRunnerListener extends RunListener {
   public void testFinished(Description description) throws Exception {
     // Note: Without this condition expression, Pepper will display " (PASSED)" at the end of the Scenario.
     if(!isRunFinished) {
-      System.out.println(" (PASSED)");
+      System.out.println(line + " (PASSED)");
       super.testFinished(description);
     }
   }
 
   @Override
   public void testIgnored(Description description) throws Exception {
-    System.out.println(" (PENDING)");
+    System.out.println(line + " (PENDING)");
     super.testIgnored(description);
   }
 }

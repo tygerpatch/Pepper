@@ -55,6 +55,7 @@ public class PepperRunner extends BlockJUnit4ClassRunner {
   // Given a line in the feature file, it returns the proper Step method in the StepDefinitions file to call
   public FrameworkMethod extractMethod(String line) {
     List<FrameworkMethod> methodList = map.get(line);
+    params.clear();
 
     // *** handle non-parameterized Given-When-Then step
     if((methodList != null) && (methodList.size() == 1)) {
@@ -158,6 +159,9 @@ public class PepperRunner extends BlockJUnit4ClassRunner {
     System.out.println("public void " + StringUtils.camelCase(line) + "() {");
     System.out.println("}");
     System.out.println();
+
+    // TODO: this could easily be made testable by returning a String containing the output
+    // TODO: write test to ensure someone doesn't do something like "giventhat x is 3"
   }
 
   // Invokes Step methods in StepDefinition
@@ -165,7 +169,8 @@ public class PepperRunner extends BlockJUnit4ClassRunner {
   protected Statement childrenInvoker(final RunNotifier notifier) {
 
     newStepDefinition();
-    notifier.addListener(new PepperRunnerListener());
+    final PepperRunnerListener listener = new PepperRunnerListener();
+    notifier.addListener(listener);
 
     return new Statement() {
       @Override
@@ -184,14 +189,13 @@ public class PepperRunner extends BlockJUnit4ClassRunner {
               System.out.println(line);
             }
             else if (line.startsWith("Given") || line.startsWith("When") || line.startsWith("Then")) {
-              params.clear();
               method = extractMethod(line);
 
               if (method == null) {
                 generateStub(line);
               }
               else {
-                System.out.print(line);
+                listener.setLine(line);
                 PepperRunner.this.runChild(method, notifier);
               }
             }
@@ -220,6 +224,53 @@ public class PepperRunner extends BlockJUnit4ClassRunner {
   }
 
   private Map<String, List<FrameworkMethod>> map = new HashMap<String, List<FrameworkMethod>>();
+
+  // computeTestMethod is called by getChildren
+  // getChildren is an overridden method
+  // computeTestMethod is not overridden
+
+//  @Override
+//  protected List<FrameworkMethod> getChildren() {
+//    // return computeTestMethods();
+//    // --
+//    // TODO: create tests for this method
+//    List<FrameworkMethod> list = new ArrayList<FrameworkMethod>();
+//    TestClass testClass = this.getTestClass();
+//
+//    for (FrameworkMethod method : testClass.getAnnotatedMethods(Given.class)) {
+//      if(method.getAnnotation(Pending.class) != null) {
+//        list.add(method);
+//      }
+//    }
+//
+//    for (FrameworkMethod method : testClass.getAnnotatedMethods(When.class)) {
+//      if(method.getAnnotation(Pending.class) != null) {
+//        list.add(method);
+//      }
+//    }
+//
+//    for (FrameworkMethod method : testClass.getAnnotatedMethods(Then.class)) {
+//      if(method.getAnnotation(Pending.class) != null) {
+//        list.add(method);
+//      }
+//    }
+//    // TODO: refactor this method to something like the following
+//    // addStepMethods(list, testClass, Given)
+//    // addStepMethods(list, testClass, When)
+//    // addStepMethods(list, testClass, Then)
+//
+//    return list;
+//  }
+
+  // TODO: figure out how to get this method to work
+  // TODO: test this method
+//  public void addStepMethods(List<FrameworkMethod> list, TestClass testClass, StepType stepType) {
+//    for (FrameworkMethod method : testClass.getAnnotatedMethods(StepType.class)) {
+//      if(method.getAnnotation(Pending.class) != null) {
+//        list.add(method);
+//      }
+//    }
+//  }
 
   // This method returns a list of all the Given-When-Then step methods in the StepDefinition.
   @Override
@@ -272,6 +323,21 @@ public class PepperRunner extends BlockJUnit4ClassRunner {
     return list;
   }
 
+  // -------------------
+  // TODO:
+
+  // "I have $value"
+  // - "int"
+  // - "double"
+
+  // @Given("I have $value")
+  // public void given(int value) {
+
+  // @Given("I have $value")
+  // public void givenDbl(double value) {
+
+  // givenMap, whenMap, thenMap
+  // -------------------
   List<Object> params = new ArrayList<Object>();
 
   // Invokes a Step method
@@ -300,3 +366,4 @@ public class PepperRunner extends BlockJUnit4ClassRunner {
     }
   }
 }
+
