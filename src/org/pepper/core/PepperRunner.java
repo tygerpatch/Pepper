@@ -184,11 +184,7 @@ public class PepperRunner extends BlockJUnit4ClassRunner {
           while (scanner.hasNextLine()) {
             line = scanner.nextLine().trim();
 
-            if (line.startsWith("Scenario:")) {
-              newStepDefinition();
-              System.out.println(line);
-            }
-            else if (line.startsWith("Given") || line.startsWith("When") || line.startsWith("Then")) {
+            if (line.startsWith("Given") || line.startsWith("When") || line.startsWith("Then")) {
               method = extractMethod(line);
 
               if (method == null) {
@@ -201,6 +197,9 @@ public class PepperRunner extends BlockJUnit4ClassRunner {
             }
             else {
               System.out.println(line);
+              if (line.startsWith("Scenario:")) {
+                newStepDefinition();
+              }
             }
           }
           scanner.close();
@@ -366,4 +365,3 @@ public class PepperRunner extends BlockJUnit4ClassRunner {
     }
   }
 }
-
