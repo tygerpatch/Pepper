@@ -250,15 +250,11 @@ public class PepperRunner extends BlockJUnit4ClassRunner {
     }
 
     // read Content Table's "header"
-    Map<String, List<String>> contentTable = new HashMap<String, List<String>>();
-    List<String> keys = new ArrayList<String>();
     line = scanner.nextLine().trim();
-    for (String key : line.split("|\\w|")) {
-      key = key.trim();
-      if (!key.isEmpty() && !"|".equals(key)) {
-        contentTable.put(key, new ArrayList<String>());
-        keys.add(key);
-      }
+    List<String> keys = parseRow(line);
+    Map<String, List<String>> contentTable = new HashMap<String, List<String>>();
+    for(String key : keys) {
+      contentTable.put(key, new ArrayList<String>());
     }
 
     // read Content Table's "body"
