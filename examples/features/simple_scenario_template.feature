@@ -1,4 +1,3 @@
-# third-level ninjas engage samurai
 Scenario Template:
   Given x is <x>
   When I add <y>
