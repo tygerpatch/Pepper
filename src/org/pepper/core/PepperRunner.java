@@ -125,37 +125,29 @@ public class PepperRunner extends BlockJUnit4ClassRunner {
           return false;
         }
 
-        // if the given argument type does not match up with the expected argument, continue with next method
-        try {
-          params.add(Integer.valueOf(lineToken));
+        Object obj = parseArgument(lineToken);
+        params.add(obj);
+        String str = "";
 
-          if (params.size() <= parameterTypes.length) {
-            if (!parameterTypes[params.size() - 1].getCanonicalName().equals("int")) {
-              return false;
-            }
-          }
+        if ("java.lang.Integer".equals(obj.getClass().getName())) {
+          str = "int";
         }
-        catch (NumberFormatException intNumberFormat) {
-          // TODO: should exception be logged
-          try {
-            params.add(Double.valueOf(lineToken));
+        else if ("java.lang.Double".equals(obj.getClass().getName())) {
+          str = "double";
+        }
+        else if ("java.lang.Boolean".equals(obj.getClass().getName())) {
+          str = "boolean";
+        }
 
-            if (params.size() <= parameterTypes.length) {
-              if (!parameterTypes[params.size() - 1].getCanonicalName().equals("double")) {
-                return false;
-              }
-            }
-          }
-          catch (NumberFormatException dblNumberFormat) {
-            // TODO: should exception be logged
-            params.add(Boolean.valueOf(lineToken));
+        // if we've read more arguments than the method takes, continue with next method
+        if (params.size() > parameterTypes.length) {
+          // TODO: demonstrate purpose of this test
+          return false;
+        }
 
-            if (params.size() <= parameterTypes.length) {
-              if (!parameterTypes[params.size() - 1].getCanonicalName().equals("boolean")) {
-                return false;
-              }
-            }
-          }
+        // if the given argument type does not match up with the expected argument, continue with next method
+        if (!parameterTypes[params.size() - 1].getCanonicalName().equals(str)) {
+          return false;
         }
       }
     }
@@ -165,6 +157,23 @@ public class PepperRunner extends BlockJUnit4ClassRunner {
     }
 
     return false;
+  }
+
+  public static Object parseArgument(String arg) {
+    // if the given argument type does not match up with the expected argument, continue with next method
+    try {
+      return Integer.valueOf(arg);
+    }
+    catch (NumberFormatException intNumberFormat) {
+      // TODO: should exception be logged
+      try {
+        return Double.valueOf(arg);
+      }
+      catch (NumberFormatException dblNumberFormat) {
+        // TODO: should exception be logged
+        return Boolean.valueOf(arg);
+      }
+    }
   }
 
   public static String generateStub(String line) {

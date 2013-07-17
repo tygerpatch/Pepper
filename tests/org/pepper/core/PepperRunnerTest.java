@@ -2,6 +2,7 @@ package org.pepper.core;
 
 import static org.hamcrest.core.IsEqual.equalTo;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 
 import org.junit.Test;
 
@@ -39,5 +40,34 @@ public class PepperRunnerTest {
     strBuilder.append("}\n");
 
     assertThat(result, equalTo(strBuilder.toString()));
+  }
+
+  @Test
+  public void testParseArgument() {
+    Object obj;
+
+    // ensure integer arguments get parsed as an integer
+    obj = PepperRunner.parseArgument("123");
+    assertTrue("java.lang.Integer".equals(obj.getClass().getName()));
+
+    // ensure that numbers with a decimal get parsed as a double
+    obj = PepperRunner.parseArgument("1.23");
+    assertTrue("java.lang.Double".equals(obj.getClass().getName()));
+
+    // ensure that "true" get parsed as a boolean
+    obj = PepperRunner.parseArgument("true");
+    assertTrue("java.lang.Boolean".equals(obj.getClass().getName()));
+
+    // ensure that "false" get parsed as a boolean
+    obj = PepperRunner.parseArgument("false");
+    assertTrue("java.lang.Boolean".equals(obj.getClass().getName()));
+
+    // ensure that parsing a boolean is case insensitive
+    obj = PepperRunner.parseArgument("tRuE");
+    assertTrue("java.lang.Boolean".equals(obj.getClass().getName()));
+
+    // ensure that parsing a boolean is case insensitive
+    obj = PepperRunner.parseArgument("fAlSe");
+    assertTrue("java.lang.Boolean".equals(obj.getClass().getName()));
   }
 }
