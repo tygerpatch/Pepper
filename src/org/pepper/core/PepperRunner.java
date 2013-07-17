@@ -62,19 +62,21 @@ public class PepperRunner extends BlockJUnit4ClassRunner {
 
         // TODO: figure out a way to reduce the duplication here
         if (frameworkMethod.getAnnotation(annotationClass) instanceof Given) {
+          listener.setLine("Given " + line);
           step = (frameworkMethod.getAnnotation(Given.class)).value();
         }
         else if (frameworkMethod.getAnnotation(annotationClass) instanceof When) {
+          listener.setLine("When " + line);
           step = (frameworkMethod.getAnnotation(When.class)).value();
         }
         else if (frameworkMethod.getAnnotation(annotationClass) instanceof Then) {
+          listener.setLine("Then " + line);
           step = (frameworkMethod.getAnnotation(Then.class)).value();
         }
 
         parameterTypes = frameworkMethod.getMethod().getParameterTypes();
 
         if (checkMethod(parameterTypes, step, line)) {
-          listener.setLine(line);
           PepperRunner.this.runChild(frameworkMethod, notifier);
           return;
         }
@@ -262,10 +264,9 @@ public class PepperRunner extends BlockJUnit4ClassRunner {
     // read Content Table's "body"
     String key;
     List<String> list;
-    int column;
-    StringBuilder strBuilder = null;
-    String str;
+    //int column;
     int numRows = 0;
+
     while (scanner.hasNextLine()) {
       line = scanner.nextLine().trim();
 
@@ -274,24 +275,12 @@ public class PepperRunner extends BlockJUnit4ClassRunner {
       }
 
       numRows++;
-      column = 0;
-      strBuilder = null;
-      for (char ch : line.toCharArray()) {
-        if (ch == '|') {
-          if (strBuilder != null) {
-            str = strBuilder.toString().trim();
-
-            key = keys.get(column);
-
-            list = contentTable.get(key);
-            list.add(str);
-            column++;
-          }
-          strBuilder = new StringBuilder();
-        }
-        else {
-          strBuilder.append(ch);
-        }
+      // column = 0;
+      List<String> data = parseRow(line);
+      for(int column = 0; column < data.size(); column++) {
+        key = keys.get(column);
+        list = contentTable.get(key);
+        list.add(data.get(column));
       }
 
     } // end of while (scanner.hasNextLine()) {
@@ -319,6 +308,25 @@ public class PepperRunner extends BlockJUnit4ClassRunner {
       System.out.println();
       row++;
     }
+  }
+
+  public static List<String> parseRow(String line) {
+    List<String> list = new ArrayList<String>();
+    StringBuilder strBuilder = null;
+
+    for (char ch : line.toCharArray()) {
+      if (ch == '|') {
+        if (strBuilder != null) {
+          list.add(strBuilder.toString().trim());
+        }
+        strBuilder = new StringBuilder();
+      }
+      else {
+        strBuilder.append(ch);
+      }
+    }
+
+    return list;
   }
 
   @Deprecated

@@ -4,7 +4,11 @@ import static org.hamcrest.core.IsEqual.equalTo;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
+import java.util.List;
+
 import org.junit.Test;
+
+import static org.junit.matchers.JUnitMatchers.hasItems;
 
 public class PepperRunnerTest {
 
@@ -69,5 +73,12 @@ public class PepperRunnerTest {
     // ensure that parsing a boolean is case insensitive
     obj = PepperRunner.parseArgument("fAlSe");
     assertTrue("java.lang.Boolean".equals(obj.getClass().getName()));
+  }
+
+  @Test
+  public void testParseRow() {
+    List<String> list = PepperRunner.parseRow("|-1|2|3|");
+    assertThat(list.size(), equalTo(3));
+    assertThat(list, hasItems("-1", "2", "3"));
   }
 }
