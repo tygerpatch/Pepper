@@ -4,7 +4,9 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Scanner;
 import java.util.StringTokenizer;
 
@@ -255,6 +257,9 @@ public class PepperRunner extends BlockJUnit4ClassRunner {
               if (line.startsWith("Scenario:")) {
                 newStepDefinition();
               }
+              else if(line.startsWith("Scenario Template:")) {
+                scenarioTemplate(scanner, listener, notifier);
+              }
             }
           }
           scanner.close();
@@ -264,6 +269,119 @@ public class PepperRunner extends BlockJUnit4ClassRunner {
         }
       }
     };
+  }
+
+  private void scenarioTemplate(Scanner scanner, PepperRunnerListener listener, RunNotifier notifier) {
+    // read lines in Scenario Template
+    String line;
+    List<String> scenarioTemplate = new ArrayList<String>();
+
+    while (scanner.hasNextLine()) {
+      line = scanner.nextLine().trim();
+      if (line.equals("Content Table:")) {
+        break; // from while loop
+      }
+      scenarioTemplate.add(line);
+    }
+
+    // read Content Table's "header"
+    Map<String, List<String>> contentTable = new HashMap<String, List<String>>();
+    List<String> keys = new ArrayList<String>();
+    line = scanner.nextLine().trim();
+    for (String key : line.split("|\\w|")) {
+      key = key.trim();
+      if (!key.isEmpty() && !"|".equals(key)) {
+        contentTable.put(key, new ArrayList<String>());
+        keys.add(key);
+      }
+    }
+
+    // read Content Table's "body"
+    String[] strArray;
+    String key;
+    List<String> list;
+    int column;
+    StringBuilder strBuilder = null;
+    String str;
+    int numRows = 0;
+    while (scanner.hasNextLine()) {
+      line = scanner.nextLine().trim();
+
+      if (!line.startsWith("|")) {
+        break; // from while loop
+      }
+
+      numRows++;
+      column = 0;
+      strBuilder = null;
+      for (char ch : line.toCharArray()) {
+        if (ch == '|') {
+          if (strBuilder != null) {
+            str = strBuilder.toString().trim();
+
+            key = keys.get(column);
+
+            list = contentTable.get(key);
+            list.add(str);
+            column++;
+          }
+          strBuilder = new StringBuilder();
+        }
+        else {
+          strBuilder.append(ch);
+        }
+      }
+
+    } // end of while (scanner.hasNextLine()) {
+
+    // run Scenario Template
+    int row = 0;
+    FrameworkMethod method;
+
+    while (row < numRows) {
+      for (String strLine : scenarioTemplate) {
+        for (String strKey : contentTable.keySet()) {
+          list = contentTable.get(strKey);
+          strLine = strLine.replaceAll("<" + strKey + ">", list.get(row));
+        }
+
+        if (strLine.startsWith("Given")) {
+          method = getGivenStepMethod(strLine.substring(5));
+
+          if (method == null) {
+            System.out.println(generateStub(strLine));
+          }
+          else {
+            listener.setLine(strLine);
+            PepperRunner.this.runChild(method, notifier);
+          }
+        }
+        else if (strLine.startsWith("When")) {
+          method = getWhenStepMethod(strLine.substring(4));
+
+          if (method == null) {
+            System.out.println(generateStub(strLine));
+          }
+          else {
+            listener.setLine(strLine);
+            PepperRunner.this.runChild(method, notifier);
+          }
+        }
+        else if (strLine.startsWith("Then")) {
+          method = getThenStepMethod(strLine.substring(4));
+
+          if (method == null) {
+            System.out.println(generateStub(strLine));
+          }
+          else {
+            listener.setLine(strLine);
+            PepperRunner.this.runChild(method, notifier);
+          }
+        }
+      }
+      System.out.println();
+      row++;
+    }
   }
 
   @Deprecated
