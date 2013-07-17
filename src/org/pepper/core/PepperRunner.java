@@ -383,28 +383,24 @@ public class PepperRunner extends BlockJUnit4ClassRunner {
 
   @Override
   protected List<FrameworkMethod> getChildren() {
-    List<FrameworkMethod> list = new ArrayList<FrameworkMethod>();
+    List<Class<? extends Annotation>> annotationClasses = new ArrayList<Class<? extends Annotation>>();
+
+    annotationClasses.add(Given.class);
+    annotationClasses.add(When.class);
+    annotationClasses.add(Then.class);
+
+    List<FrameworkMethod> frameworkMethods = new ArrayList<FrameworkMethod>();
     TestClass testClass = this.getTestClass();
 
-    for (FrameworkMethod method : testClass.getAnnotatedMethods(Given.class)) {
-      if(method.getAnnotation(Pending.class) != null) {
-        list.add(method);
+    for (Class<? extends Annotation> annotationClass : annotationClasses) {
+      for (FrameworkMethod method : testClass.getAnnotatedMethods(annotationClass)) {
+        if (method.getAnnotation(Pending.class) != null) {
+          frameworkMethods.add(method);
+        }
       }
     }
 
-    for (FrameworkMethod method : testClass.getAnnotatedMethods(When.class)) {
-      if(method.getAnnotation(Pending.class) != null) {
-        list.add(method);
-      }
-    }
-
-    for (FrameworkMethod method : testClass.getAnnotatedMethods(Then.class)) {
-      if(method.getAnnotation(Pending.class) != null) {
-        list.add(method);
-      }
-    }
-
-    return list;
+    return frameworkMethods;
   }
 
   List<Object> params = new ArrayList<Object>();
