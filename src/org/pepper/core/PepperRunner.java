@@ -52,7 +52,7 @@ public class PepperRunner extends BlockJUnit4ClassRunner {
     }
   }
 
-  public FrameworkMethod getStepMethod(String line, Class<? extends Annotation> annotationClass) {
+  public void runStepMethod(String line, Class<? extends Annotation> annotationClass, RunNotifier notifier, PepperRunnerListener listener) {
     // TODO: create unit tests for this method
     String step = null;
     Class<?>[] parameterTypes;
@@ -74,12 +74,14 @@ public class PepperRunner extends BlockJUnit4ClassRunner {
         parameterTypes = frameworkMethod.getMethod().getParameterTypes();
 
         if (checkMethod(parameterTypes, step, line)) {
-          return frameworkMethod;
+          listener.setLine(line);
+          PepperRunner.this.runChild(frameworkMethod, notifier);
+          return;
         }
       }
     }
 
-    return null;
+    System.out.println(generateStub(line));
   }
 
   public boolean checkMethod(Class<?>[] parameterTypes, String step, String line) {
@@ -200,43 +202,18 @@ public class PepperRunner extends BlockJUnit4ClassRunner {
           File file = new File(path);
           Scanner scanner = new Scanner(file); // <- FileNotFoundException
           String line;
-          FrameworkMethod method;
 
           while (scanner.hasNextLine()) {
             line = scanner.nextLine().trim();
 
             if(line.startsWith("Given")) {
-              method = getStepMethod(line.substring(5), Given.class);
-
-              if (method == null) {
-                System.out.println(generateStub(line));
-              }
-              else {
-                listener.setLine(line);
-                PepperRunner.this.runChild(method, notifier);
-              }
+              runStepMethod(line.substring(5), Given.class, notifier, listener);
             }
             else if(line.startsWith("When")) {
-              method = getStepMethod(line.substring(4), When.class);
-
-              if (method == null) {
-                System.out.println(generateStub(line));
-              }
-              else {
-                listener.setLine(line);
-                PepperRunner.this.runChild(method, notifier);
-              }
+              runStepMethod(line.substring(4), When.class, notifier, listener);
             }
             else if(line.startsWith("Then")) {
-              method = getStepMethod(line.substring(4), Then.class);
-
-              if (method == null) {
-                System.out.println(generateStub(line));
-              }
-              else {
-                listener.setLine(line);
-                PepperRunner.this.runChild(method, notifier);
-              }
+              runStepMethod(line.substring(4), Then.class, notifier, listener);
             }
             else {
               System.out.println(line);
@@ -283,7 +260,6 @@ public class PepperRunner extends BlockJUnit4ClassRunner {
     }
 
     // read Content Table's "body"
-    String[] strArray;
     String key;
     List<String> list;
     int column;
@@ -322,7 +298,6 @@ public class PepperRunner extends BlockJUnit4ClassRunner {
 
     // run Scenario Template
     int row = 0;
-    FrameworkMethod method;
 
     while (row < numRows) {
       for (String strLine : scenarioTemplate) {
@@ -332,37 +307,13 @@ public class PepperRunner extends BlockJUnit4ClassRunner {
         }
 
         if (strLine.startsWith("Given")) {
-          method = getStepMethod(strLine.substring(5), Given.class);
-
-          if (method == null) {
-            System.out.println(generateStub(strLine));
-          }
-          else {
-            listener.setLine(strLine);
-            PepperRunner.this.runChild(method, notifier);
-          }
+          runStepMethod(strLine.substring(5), Given.class, notifier, listener);
         }
         else if (strLine.startsWith("When")) {
-          method = getStepMethod(strLine.substring(4), When.class);
-
-          if (method == null) {
-            System.out.println(generateStub(strLine));
-          }
-          else {
-            listener.setLine(strLine);
-            PepperRunner.this.runChild(method, notifier);
-          }
+          runStepMethod(strLine.substring(4), When.class, notifier, listener);
         }
         else if (strLine.startsWith("Then")) {
-          method = getStepMethod(strLine.substring(4), Then.class);
-
-          if (method == null) {
-            System.out.println(generateStub(strLine));
-          }
-          else {
-            listener.setLine(strLine);
-            PepperRunner.this.runChild(method, notifier);
-          }
+          runStepMethod(strLine.substring(4), Then.class, notifier, listener);
         }
       }
       System.out.println();
