@@ -2,6 +2,7 @@ package org.pepper.core;
 
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.lang.annotation.Annotation;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -51,52 +52,28 @@ public class PepperRunner extends BlockJUnit4ClassRunner {
     }
   }
 
-  public FrameworkMethod getGivenStepMethod(String line) {
-    String step;
+  public FrameworkMethod getStepMethod(String line, Class<? extends Annotation> annotationClass) {
+    // TODO: create unit tests for this method
+    String step = null;
     Class<?>[] parameterTypes;
 
-    for (FrameworkMethod frameworkMethod : getTestClass().getAnnotatedMethods(Given.class)) {
+    for (FrameworkMethod frameworkMethod : getTestClass().getAnnotatedMethods(annotationClass)) {
       if (frameworkMethod.getAnnotation(Pending.class) == null) {
-        step = (frameworkMethod.getAnnotation(Given.class)).value();
-        parameterTypes = frameworkMethod.getMethod().getParameterTypes();
 
-        if(checkMethod(parameterTypes, step, line)) {
-          return frameworkMethod;
+        // TODO: figure out a way to reduce the duplication here
+        if (frameworkMethod.getAnnotation(annotationClass) instanceof Given) {
+          step = (frameworkMethod.getAnnotation(Given.class)).value();
         }
-      }
-    }
-
-    return null;
-  }
-
-  public FrameworkMethod getWhenStepMethod(String line) {
-    String step;
-    Class<?>[] parameterTypes;
-
-    for (FrameworkMethod frameworkMethod : getTestClass().getAnnotatedMethods(When.class)) {
-      if (frameworkMethod.getAnnotation(Pending.class) == null) {
-        step = (frameworkMethod.getAnnotation(When.class)).value();
-        parameterTypes = frameworkMethod.getMethod().getParameterTypes();
-
-        if(checkMethod(parameterTypes, step, line)) {
-          return frameworkMethod;
+        else if (frameworkMethod.getAnnotation(annotationClass) instanceof When) {
+          step = (frameworkMethod.getAnnotation(When.class)).value();
         }
-      }
-    }
+        else if (frameworkMethod.getAnnotation(annotationClass) instanceof Then) {
+          step = (frameworkMethod.getAnnotation(Then.class)).value();
+        }
 
-    return null;
-  }
-
-  public FrameworkMethod getThenStepMethod(String line) {
-    String step;
-    Class<?>[] parameterTypes;
-
-    for (FrameworkMethod frameworkMethod : getTestClass().getAnnotatedMethods(Then.class)) {
-      if (frameworkMethod.getAnnotation(Pending.class) == null) {
-        step = (frameworkMethod.getAnnotation(Then.class)).value();
         parameterTypes = frameworkMethod.getMethod().getParameterTypes();
 
-        if(checkMethod(parameterTypes, step, line)) {
+        if (checkMethod(parameterTypes, step, line)) {
           return frameworkMethod;
         }
       }
@@ -229,7 +206,7 @@ public class PepperRunner extends BlockJUnit4ClassRunner {
             line = scanner.nextLine().trim();
 
             if(line.startsWith("Given")) {
-              method = getGivenStepMethod(line.substring(5));
+              method = getStepMethod(line.substring(5), Given.class);
 
               if (method == null) {
                 System.out.println(generateStub(line));
@@ -240,7 +217,7 @@ public class PepperRunner extends BlockJUnit4ClassRunner {
               }
             }
             else if(line.startsWith("When")) {
-              method = getWhenStepMethod(line.substring(4));
+              method = getStepMethod(line.substring(4), When.class);
 
               if (method == null) {
                 System.out.println(generateStub(line));
@@ -251,7 +228,7 @@ public class PepperRunner extends BlockJUnit4ClassRunner {
               }
             }
             else if(line.startsWith("Then")) {
-              method = getThenStepMethod(line.substring(4));
+              method = getStepMethod(line.substring(4), Then.class);
 
               if (method == null) {
                 System.out.println(generateStub(line));
@@ -355,7 +332,7 @@ public class PepperRunner extends BlockJUnit4ClassRunner {
         }
 
         if (strLine.startsWith("Given")) {
-          method = getGivenStepMethod(strLine.substring(5));
+          method = getStepMethod(strLine.substring(5), Given.class);
 
           if (method == null) {
             System.out.println(generateStub(strLine));
@@ -366,7 +343,7 @@ public class PepperRunner extends BlockJUnit4ClassRunner {
           }
         }
         else if (strLine.startsWith("When")) {
-          method = getWhenStepMethod(strLine.substring(4));
+          method = getStepMethod(strLine.substring(4), When.class);
 
           if (method == null) {
             System.out.println(generateStub(strLine));
@@ -377,7 +354,7 @@ public class PepperRunner extends BlockJUnit4ClassRunner {
           }
         }
         else if (strLine.startsWith("Then")) {
-          method = getThenStepMethod(strLine.substring(4));
+          method = getStepMethod(strLine.substring(4), Then.class);
 
           if (method == null) {
             System.out.println(generateStub(strLine));
