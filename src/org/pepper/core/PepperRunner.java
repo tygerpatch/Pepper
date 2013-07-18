@@ -191,49 +191,44 @@ public class PepperRunner extends BlockJUnit4ClassRunner {
 
   // Invokes Step methods in StepDefinition
   @Override
-  protected Statement childrenInvoker(final RunNotifier notifier) {
+  public void run(final RunNotifier notifier) {
 
     newStepDefinition();
     final PepperRunnerListener listener = new PepperRunnerListener();
     notifier.addListener(listener);
 
-    return new Statement() {
-      @Override
-      public void evaluate() {
-        try {
-          File file = new File(path);
-          Scanner scanner = new Scanner(file); // <- FileNotFoundException
-          String line;
+    try {
+      File file = new File(path);
+      Scanner scanner = new Scanner(file); // <- FileNotFoundException
+      String line;
 
-          while (scanner.hasNextLine()) {
-            line = scanner.nextLine().trim();
+      while (scanner.hasNextLine()) {
+        line = scanner.nextLine().trim();
 
-            if(line.startsWith("Given")) {
-              runStepMethod(line.substring(5), Given.class, notifier, listener);
-            }
-            else if(line.startsWith("When")) {
-              runStepMethod(line.substring(4), When.class, notifier, listener);
-            }
-            else if(line.startsWith("Then")) {
-              runStepMethod(line.substring(4), Then.class, notifier, listener);
-            }
-            else {
-              System.out.println(line);
-              if (line.startsWith("Scenario:")) {
-                newStepDefinition();
-              }
-              else if(line.startsWith("Scenario Template:")) {
-                scenarioTemplate(scanner, listener, notifier);
-              }
-            }
-          }
-          scanner.close();
+        if(line.startsWith("Given")) {
+          runStepMethod(line.substring(5), Given.class, notifier, listener);
         }
-        catch (FileNotFoundException fileNotFound) {
-          fileNotFound.printStackTrace();
+        else if(line.startsWith("When")) {
+          runStepMethod(line.substring(4), When.class, notifier, listener);
+        }
+        else if(line.startsWith("Then")) {
+          runStepMethod(line.substring(4), Then.class, notifier, listener);
+        }
+        else {
+          System.out.println(line);
+          if (line.startsWith("Scenario:")) {
+            newStepDefinition();
+          }
+          else if(line.startsWith("Scenario Template:")) {
+            scenarioTemplate(scanner, listener, notifier);
+          }
         }
       }
-    };
+      scanner.close();
+    }
+    catch (FileNotFoundException fileNotFound) {
+      fileNotFound.printStackTrace();
+    }
   }
 
   private void scenarioTemplate(Scanner scanner, PepperRunnerListener listener, RunNotifier notifier) {
