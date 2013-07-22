@@ -200,6 +200,8 @@ public class PepperRunner extends BlockJUnit4ClassRunner {
     newStepDefinition();
     final PepperRunnerListener listener = new PepperRunnerListener();
     notifier.addListener(listener);
+    // keep track of last step method, this is needed to handle And steps
+    char ch = '?';  // TODO: this should probably be an enum, not a char
 
     try {
       File file = new File(path);
@@ -210,16 +212,31 @@ public class PepperRunner extends BlockJUnit4ClassRunner {
         line = scanner.nextLine().trim();
 
         if(line.startsWith("Given")) {
+          ch = 'G';
           runStepMethod(line, Given.class, notifier, listener);
         }
         else if(line.startsWith("When")) {
+          ch = 'W';
           runStepMethod(line, When.class, notifier, listener);
         }
         else if(line.startsWith("Then")) {
           runStepMethod(line, Then.class, notifier, listener);
         }
+        else if(line.startsWith("And")) {
+          // notice that it replaces the beginning of the line (ie. "And blah blah") with the appropriate step (ie. "Given blah blah)
+          if(ch == 'G') {
+            runStepMethod("Given " + line.substring(4), Given.class, notifier, listener);
+          }
+          else if(ch == 'W') {
+            runStepMethod("When " + line.substring(4), When.class, notifier, listener);
+          }
+          else if(ch == 'T') {
+            runStepMethod("Then " + line.substring(4), Then.class, notifier, listener);
+          }
+        }
         else {
           System.out.println(line);
+          ch = '?';
           if (line.startsWith("Scenario:")) {
             newStepDefinition();
           }
