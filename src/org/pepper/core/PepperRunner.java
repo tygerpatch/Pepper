@@ -57,26 +57,30 @@ public class PepperRunner extends BlockJUnit4ClassRunner {
     String step = null;
     Class<?>[] parameterTypes;
 
+    String str;
+    int length;
+
     for (FrameworkMethod frameworkMethod : getTestClass().getAnnotatedMethods(annotationClass)) {
       if (frameworkMethod.getAnnotation(Pending.class) == null) {
 
+        length = line.startsWith("Given") ? 5 : 4;
+        str = line.substring(length + 1);
+        listener.setLine(str);
+
         // TODO: figure out a way to reduce the duplication here
         if (frameworkMethod.getAnnotation(annotationClass) instanceof Given) {
-          listener.setLine("Given " + line);
           step = (frameworkMethod.getAnnotation(Given.class)).value();
         }
         else if (frameworkMethod.getAnnotation(annotationClass) instanceof When) {
-          listener.setLine("When " + line);
           step = (frameworkMethod.getAnnotation(When.class)).value();
         }
         else if (frameworkMethod.getAnnotation(annotationClass) instanceof Then) {
-          listener.setLine("Then " + line);
           step = (frameworkMethod.getAnnotation(Then.class)).value();
         }
 
         parameterTypes = frameworkMethod.getMethod().getParameterTypes();
 
-        if (checkMethod(parameterTypes, step, line)) {
+        if (checkMethod(parameterTypes, step, str)) {
           PepperRunner.this.runChild(frameworkMethod, notifier);
           return;
         }
@@ -206,13 +210,13 @@ public class PepperRunner extends BlockJUnit4ClassRunner {
         line = scanner.nextLine().trim();
 
         if(line.startsWith("Given")) {
-          runStepMethod(line.substring(5), Given.class, notifier, listener);
+          runStepMethod(line, Given.class, notifier, listener);
         }
         else if(line.startsWith("When")) {
-          runStepMethod(line.substring(4), When.class, notifier, listener);
+          runStepMethod(line, When.class, notifier, listener);
         }
         else if(line.startsWith("Then")) {
-          runStepMethod(line.substring(4), Then.class, notifier, listener);
+          runStepMethod(line, Then.class, notifier, listener);
         }
         else {
           System.out.println(line);
@@ -287,13 +291,13 @@ public class PepperRunner extends BlockJUnit4ClassRunner {
         }
 
         if (strLine.startsWith("Given")) {
-          runStepMethod(strLine.substring(5), Given.class, notifier, listener);
+          runStepMethod(strLine, Given.class, notifier, listener);
         }
         else if (strLine.startsWith("When")) {
-          runStepMethod(strLine.substring(4), When.class, notifier, listener);
+          runStepMethod(strLine, When.class, notifier, listener);
         }
         else if (strLine.startsWith("Then")) {
-          runStepMethod(strLine.substring(4), Then.class, notifier, listener);
+          runStepMethod(strLine, Then.class, notifier, listener);
         }
       }
       System.out.println();
