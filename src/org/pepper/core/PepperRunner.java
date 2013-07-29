@@ -157,7 +157,7 @@ public class PepperRunner extends BlockJUnit4ClassRunner {
             newStepDefinition();
           }
           else if(line.startsWith("Scenario Template:")) {
-            scenarioTemplate(scanner, runNotifier);
+            scenarioTemplate(scanner, runListener, runNotifier);
           }
         }
       }
@@ -168,7 +168,7 @@ public class PepperRunner extends BlockJUnit4ClassRunner {
     }
   }
 
-  private void scenarioTemplate(Scanner scanner, RunNotifier runNotifier) {
+  private void scenarioTemplate(Scanner scanner, PepperRunnerListener runListener, RunNotifier runNotifier) {
     // read lines in Scenario Template
     String line;
     List<String> scenarioTemplate = new ArrayList<String>();
@@ -223,6 +223,7 @@ public class PepperRunner extends BlockJUnit4ClassRunner {
           strLine = strLine.replaceAll("<" + strKey + ">", list.get(row));
         }
 
+        runListener.setLine(strLine);
         if (strLine.startsWith("Given")) {
           runStep(strLine, givenMethods, runNotifier);
         }
