@@ -9,5 +9,5 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME) // indicates annotation will be available at runtime
 @Target(ElementType.METHOD)         // indicates annotation can only be applied to methods
 public @interface When {
-  String value();
+  public String value();
 }
