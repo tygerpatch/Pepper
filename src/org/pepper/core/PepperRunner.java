@@ -2,14 +2,13 @@ package org.pepper.core;
 
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.lang.annotation.Annotation;
 import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Scanner;
-import java.util.StringTokenizer;
 
 import org.junit.runner.Description;
 import org.junit.runner.notification.RunNotifier;
@@ -17,16 +16,23 @@ import org.junit.runners.BlockJUnit4ClassRunner;
 import org.junit.runners.model.FrameworkMethod;
 import org.junit.runners.model.InitializationError;
 import org.junit.runners.model.Statement;
-import org.junit.runners.model.TestClass;
 import org.pepper.core.annotations.Given;
 import org.pepper.core.annotations.Pending;
 import org.pepper.core.annotations.Then;
 import org.pepper.core.annotations.When;
+import org.pepper.core.models.GivenFrameworkMethod;
+import org.pepper.core.models.StepMethod;
+import org.pepper.core.models.ThenFrameworkMethod;
+import org.pepper.core.models.WhenFrameworkMethod;
 
 public class PepperRunner extends BlockJUnit4ClassRunner {
 
+  private Class<?> klass;
+
   public PepperRunner(Class<?> klass) throws InitializationError {
     super(klass);
+
+    this.klass = klass;
   }
 
   private StepDefinition stepDef;
@@ -52,115 +58,6 @@ public class PepperRunner extends BlockJUnit4ClassRunner {
     }
   }
 
-  public void runStepMethod(String line, Class<? extends Annotation> annotationClass, RunNotifier notifier, PepperRunnerListener listener) {
-    // TODO: create unit tests for this method
-    String step = null;
-    Class<?>[] parameterTypes;
-
-    String str;
-    int length;
-
-    for (FrameworkMethod frameworkMethod : getTestClass().getAnnotatedMethods(annotationClass)) {
-      if (frameworkMethod.getAnnotation(Pending.class) == null) {
-
-        length = line.startsWith("Given") ? 5 : 4;
-        str = line.substring(length + 1);
-        listener.setLine(str);
-
-        // TODO: figure out a way to reduce the duplication here
-        if (frameworkMethod.getAnnotation(annotationClass) instanceof Given) {
-          step = (frameworkMethod.getAnnotation(Given.class)).value();
-        }
-        else if (frameworkMethod.getAnnotation(annotationClass) instanceof When) {
-          step = (frameworkMethod.getAnnotation(When.class)).value();
-        }
-        else if (frameworkMethod.getAnnotation(annotationClass) instanceof Then) {
-          step = (frameworkMethod.getAnnotation(Then.class)).value();
-        }
-
-        parameterTypes = frameworkMethod.getMethod().getParameterTypes();
-
-        if (checkMethod(parameterTypes, step, str)) {
-          PepperRunner.this.runChild(frameworkMethod, notifier);
-          return;
-        }
-      }
-    }
-
-    System.out.println(generateStub(line));
-  }
-
-  public boolean checkMethod(Class<?>[] parameterTypes, String step, String line) {
-    params.clear();
-
-    StringTokenizer stepTokenizer = new StringTokenizer(step);
-    StringTokenizer lineTokenizer = new StringTokenizer(line);
-
-    String stepToken, lineToken;
-
-    // iterate over each word in method and line
-    while (stepTokenizer.hasMoreTokens() && lineTokenizer.hasMoreTokens()) {
-      stepToken = stepTokenizer.nextToken();
-      lineToken = lineTokenizer.nextToken();
-
-      // if both words don't match
-      if (!stepToken.equals(lineToken)) {
-        // if word in method isn't a placeholder, continue with next method
-        if (!stepToken.startsWith("$")) {
-          return false;
-        }
-
-        Object obj = parseArgument(lineToken);
-        params.add(obj);
-        String str = "";
-
-        if ("java.lang.Integer".equals(obj.getClass().getName())) {
-          str = "int";
-        }
-        else if ("java.lang.Double".equals(obj.getClass().getName())) {
-          str = "double";
-        }
-        else if ("java.lang.Boolean".equals(obj.getClass().getName())) {
-          str = "boolean";
-        }
-
-        // if we've read more arguments than the method takes, continue with next method
-        if (params.size() > parameterTypes.length) {
-          // TODO: demonstrate purpose of this test
-          return false;
-        }
-
-        // if the given argument type does not match up with the expected argument, continue with next method
-        if (!parameterTypes[params.size() - 1].getCanonicalName().equals(str)) {
-          return false;
-        }
-      }
-    }
-
-    if (!stepTokenizer.hasMoreTokens() && !lineTokenizer.hasMoreTokens()) {
-      return true;
-    }
-
-    return false;
-  }
-
-  public static Object parseArgument(String arg) {
-    // if the given argument type does not match up with the expected argument, continue with next method
-    try {
-      return Integer.valueOf(arg);
-    }
-    catch (NumberFormatException intNumberFormat) {
-      // TODO: should exception be logged
-      try {
-        return Double.valueOf(arg);
-      }
-      catch (NumberFormatException dblNumberFormat) {
-        // TODO: should exception be logged
-        return Boolean.valueOf(arg);
-      }
-    }
-  }
-
   public static String generateStub(String line) {
     StringBuilder strBuilder = new StringBuilder();
 
@@ -181,6 +78,7 @@ public class PepperRunner extends BlockJUnit4ClassRunner {
 
     // System.out.println("public void " + StringUtils.camelCase(line) + "() {");
     strBuilder.append("public void ");
+    line = line.replaceAll("\\\\\"","");    // remove all instances of \"
     strBuilder.append(StringUtils.camelCase(line));
     strBuilder.append("() {\n");
 
@@ -193,13 +91,25 @@ public class PepperRunner extends BlockJUnit4ClassRunner {
     return strBuilder.toString();
   }
 
+  private void runStep(String line, List<? extends StepMethod> stepMethods, RunNotifier runNotifier) {
+    for (StepMethod stepMethod : stepMethods) {
+      if (stepMethod.matches(line)) {
+        PepperRunner.this.runChild(stepMethod, runNotifier);
+        return;
+      }
+    }
+
+    generateStub(line);
+  }
+  
   // Invokes Step methods in StepDefinition
   @Override
-  public void run(final RunNotifier notifier) {
+  public void run(final RunNotifier runNotifier) {
 
     newStepDefinition();
-    final PepperRunnerListener listener = new PepperRunnerListener();
-    notifier.addListener(listener);
+    final PepperRunnerListener runListener = new PepperRunnerListener();
+    runNotifier.addListener(runListener);
+
     // keep track of last step method, this is needed to handle And steps
     char ch = '?';  // TODO: this should probably be an enum, not a char
 
@@ -210,28 +120,31 @@ public class PepperRunner extends BlockJUnit4ClassRunner {
 
       while (scanner.hasNextLine()) {
         line = scanner.nextLine().trim();
-
+        line = line.replaceAll("\\\"", "\\\\\""); // escape quotes
+        runListener.setLine(line);
+        
         if(line.startsWith("Given")) {
           ch = 'G';
-          runStepMethod(line, Given.class, notifier, listener);
+          runStep(line, givenMethods, runNotifier);
         }
         else if(line.startsWith("When")) {
           ch = 'W';
-          runStepMethod(line, When.class, notifier, listener);
+          runStep(line, whenMethods, runNotifier);
         }
         else if(line.startsWith("Then")) {
-          runStepMethod(line, Then.class, notifier, listener);
+          ch = 'T';
+          runStep(line, thenMethods, runNotifier);
         }
         else if(line.startsWith("And")) {
           // notice that it replaces the beginning of the line (ie. "And blah blah") with the appropriate step (ie. "Given blah blah)
           if(ch == 'G') {
-            runStepMethod("Given " + line.substring(4), Given.class, notifier, listener);
+            runStep("Given " + line.substring(4), givenMethods, runNotifier);
           }
           else if(ch == 'W') {
-            runStepMethod("When " + line.substring(4), When.class, notifier, listener);
+            runStep("When " + line.substring(4), whenMethods, runNotifier);
           }
           else if(ch == 'T') {
-            runStepMethod("Then " + line.substring(4), Then.class, notifier, listener);
+            runStep("Then " + line.substring(4), thenMethods, runNotifier);
           }
         }
         else {
@@ -241,7 +154,7 @@ public class PepperRunner extends BlockJUnit4ClassRunner {
             newStepDefinition();
           }
           else if(line.startsWith("Scenario Template:")) {
-            scenarioTemplate(scanner, listener, notifier);
+            scenarioTemplate(scanner, runNotifier);
           }
         }
       }
@@ -252,7 +165,7 @@ public class PepperRunner extends BlockJUnit4ClassRunner {
     }
   }
 
-  private void scenarioTemplate(Scanner scanner, PepperRunnerListener listener, RunNotifier notifier) {
+  private void scenarioTemplate(Scanner scanner, RunNotifier runNotifier) {
     // read lines in Scenario Template
     String line;
     List<String> scenarioTemplate = new ArrayList<String>();
@@ -308,13 +221,13 @@ public class PepperRunner extends BlockJUnit4ClassRunner {
         }
 
         if (strLine.startsWith("Given")) {
-          runStepMethod(strLine, Given.class, notifier, listener);
+          runStep(strLine, givenMethods, runNotifier);
         }
         else if (strLine.startsWith("When")) {
-          runStepMethod(strLine, When.class, notifier, listener);
+          runStep(strLine, whenMethods, runNotifier);
         }
         else if (strLine.startsWith("Then")) {
-          runStepMethod(strLine, Then.class, notifier, listener);
+          runStep(strLine, thenMethods, runNotifier);
         }
       }
       System.out.println();
@@ -352,26 +265,33 @@ public class PepperRunner extends BlockJUnit4ClassRunner {
     // The JUnit API says this method will go away in the future. So I think it's safe to comment out.
   }
 
+  private List<GivenFrameworkMethod> givenMethods = new ArrayList<GivenFrameworkMethod>();
+  private List<WhenFrameworkMethod> whenMethods = new ArrayList<WhenFrameworkMethod>();
+  private List<ThenFrameworkMethod> thenMethods = new ArrayList<ThenFrameworkMethod>();
+
   @Override
   protected List<FrameworkMethod> getChildren() {
-    List<Class<? extends Annotation>> annotationClasses = new ArrayList<Class<? extends Annotation>>();
+    List<FrameworkMethod> list = new ArrayList<FrameworkMethod>();
 
-    annotationClasses.add(Given.class);
-    annotationClasses.add(When.class);
-    annotationClasses.add(Then.class);
-
-    List<FrameworkMethod> frameworkMethods = new ArrayList<FrameworkMethod>();
-    TestClass testClass = this.getTestClass();
-
-    for (Class<? extends Annotation> annotationClass : annotationClasses) {
-      for (FrameworkMethod method : testClass.getAnnotatedMethods(annotationClass)) {
-        if (method.getAnnotation(Pending.class) != null) {
-          frameworkMethods.add(method);
-        }
+    for(Method method : klass.getMethods()) {
+      if(method.getAnnotation(Given.class) != null) {
+        GivenFrameworkMethod givenMethod = new GivenFrameworkMethod(method);
+        givenMethods.add(givenMethod);
+        list.add(givenMethod);
+      }
+      else if(method.getAnnotation(When.class) != null) {
+        WhenFrameworkMethod whenMethod = new WhenFrameworkMethod(method);
+        whenMethods.add(whenMethod);
+        list.add(whenMethod);
+      }
+      if(method.getAnnotation(Then.class) != null) {
+        ThenFrameworkMethod thenMethod = new ThenFrameworkMethod(method);
+        thenMethods.add(thenMethod);
+        list.add(thenMethod);
       }
     }
 
-    return frameworkMethods;
+    return list;
   }
 
   List<Object> params = new ArrayList<Object>();
