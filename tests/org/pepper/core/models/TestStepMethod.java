@@ -9,7 +9,7 @@ import java.lang.reflect.Method;
 
 import org.junit.Test;
 import org.pepper.core.annotations.Given;
-import org.pepper.core.models.GivenFrameworkMethod;
+import org.pepper.core.models.GivenStepMethod;
 import org.pepper.core.models.StepMethod;
 
 // TODO: need a better name for class (depending on what happens to StepMethod class)
@@ -19,11 +19,11 @@ public class TestStepMethod {
   public void testMatches() {
     String line = "Given I have -3";
     Class<?> klass = MyClass.class;
-    GivenFrameworkMethod givenMethod = null;
+    GivenStepMethod givenMethod = null;
 
     for (Method method : klass.getMethods()) {
       if (method.getAnnotation(Given.class) != null) {
-        givenMethod = new GivenFrameworkMethod(method);
+        givenMethod = new GivenStepMethod(method);
         if (givenMethod.matches(line)) {
           break;
         }

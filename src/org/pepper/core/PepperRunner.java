@@ -20,10 +20,10 @@ import org.pepper.core.annotations.Given;
 import org.pepper.core.annotations.Pending;
 import org.pepper.core.annotations.Then;
 import org.pepper.core.annotations.When;
-import org.pepper.core.models.GivenFrameworkMethod;
+import org.pepper.core.models.GivenStepMethod;
 import org.pepper.core.models.StepMethod;
-import org.pepper.core.models.ThenFrameworkMethod;
-import org.pepper.core.models.WhenFrameworkMethod;
+import org.pepper.core.models.ThenStepMethod;
+import org.pepper.core.models.WhenStepMethod;
 
 public class PepperRunner extends BlockJUnit4ClassRunner {
 
@@ -269,9 +269,9 @@ public class PepperRunner extends BlockJUnit4ClassRunner {
     // The JUnit API says this method will go away in the future. So I think it's safe to comment out.
   }
 
-  private List<GivenFrameworkMethod> givenMethods = new ArrayList<GivenFrameworkMethod>();
-  private List<WhenFrameworkMethod> whenMethods = new ArrayList<WhenFrameworkMethod>();
-  private List<ThenFrameworkMethod> thenMethods = new ArrayList<ThenFrameworkMethod>();
+  private List<GivenStepMethod> givenMethods = new ArrayList<GivenStepMethod>();
+  private List<WhenStepMethod> whenMethods = new ArrayList<WhenStepMethod>();
+  private List<ThenStepMethod> thenMethods = new ArrayList<ThenStepMethod>();
 
   @Override
   protected List<FrameworkMethod> getChildren() {
@@ -279,17 +279,17 @@ public class PepperRunner extends BlockJUnit4ClassRunner {
 
     for(Method method : klass.getMethods()) {
       if(method.getAnnotation(Given.class) != null) {
-        GivenFrameworkMethod givenMethod = new GivenFrameworkMethod(method);
+        GivenStepMethod givenMethod = new GivenStepMethod(method);
         givenMethods.add(givenMethod);
         list.add(givenMethod);
       }
       else if(method.getAnnotation(When.class) != null) {
-        WhenFrameworkMethod whenMethod = new WhenFrameworkMethod(method);
+        WhenStepMethod whenMethod = new WhenStepMethod(method);
         whenMethods.add(whenMethod);
         list.add(whenMethod);
       }
       if(method.getAnnotation(Then.class) != null) {
-        ThenFrameworkMethod thenMethod = new ThenFrameworkMethod(method);
+        ThenStepMethod thenMethod = new ThenStepMethod(method);
         thenMethods.add(thenMethod);
         list.add(thenMethod);
       }

@@ -4,9 +4,9 @@ import java.lang.reflect.Method;
 
 import org.pepper.core.annotations.Then;
 
-public class ThenFrameworkMethod extends StepMethod {
+public class ThenStepMethod extends StepMethod {
 
-  public ThenFrameworkMethod(Method method) {
+  public ThenStepMethod(Method method) {
     super(method);
   }
 

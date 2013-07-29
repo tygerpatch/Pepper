@@ -4,9 +4,9 @@ import java.lang.reflect.Method;
 
 import org.pepper.core.annotations.Given;
 
-public class GivenFrameworkMethod extends StepMethod {
+public class GivenStepMethod extends StepMethod {
 
-  public GivenFrameworkMethod(Method method) {
+  public GivenStepMethod(Method method) {
     super(method);
   }
 

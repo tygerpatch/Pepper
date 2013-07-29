@@ -4,9 +4,9 @@ import java.lang.reflect.Method;
 
 import org.pepper.core.annotations.When;
 
-public class WhenFrameworkMethod extends StepMethod {
+public class WhenStepMethod extends StepMethod {
 
-  public WhenFrameworkMethod(Method method) {
+  public WhenStepMethod(Method method) {
     super(method);
   }
 
