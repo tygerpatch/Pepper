@@ -2,13 +2,11 @@ package org.pepper.core;
 
 import static org.hamcrest.core.IsEqual.equalTo;
 import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
+import static org.junit.matchers.JUnitMatchers.hasItems;
 
 import java.util.List;
 
 import org.junit.Test;
-
-import static org.junit.matchers.JUnitMatchers.hasItems;
 
 public class PepperRunnerTest {
 

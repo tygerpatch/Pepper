@@ -7,7 +7,6 @@ import java.util.StringTokenizer;
 
 import org.junit.runners.model.FrameworkMethod;
 
-// TODO: need a more descriptive name, or else extract into separate utility class used by GivenFrameworkMethod, WhenFrameworkMethod, ThenFrameworkMethod
 public abstract class StepMethod extends FrameworkMethod {
 
   public StepMethod(Method method) {

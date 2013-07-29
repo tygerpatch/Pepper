@@ -9,10 +9,7 @@ import java.lang.reflect.Method;
 
 import org.junit.Test;
 import org.pepper.core.annotations.Given;
-import org.pepper.core.models.GivenStepMethod;
-import org.pepper.core.models.StepMethod;
 
-// TODO: need a better name for class (depending on what happens to StepMethod class)
 public class TestStepMethod {
 
   @Test
