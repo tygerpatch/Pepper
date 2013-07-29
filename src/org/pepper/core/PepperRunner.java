@@ -99,7 +99,7 @@ public class PepperRunner extends BlockJUnit4ClassRunner {
       }
     }
 
-    generateStub(line);
+    System.out.println(generateStub(line));
   }
   
   // Invokes Step methods in StepDefinition
