@@ -91,9 +91,12 @@ public class PepperRunner extends BlockJUnit4ClassRunner {
     return strBuilder.toString();
   }
 
+  private List<Object> arguments;
+
   private void runStep(String line, List<? extends StepMethod> stepMethods, RunNotifier runNotifier) {
     for (StepMethod stepMethod : stepMethods) {
       if (stepMethod.matches(line)) {
+        arguments = stepMethod.getArguments();
         PepperRunner.this.runChild(stepMethod, runNotifier);
         return;
       }
@@ -294,8 +297,6 @@ public class PepperRunner extends BlockJUnit4ClassRunner {
     return list;
   }
 
-  List<Object> params = new ArrayList<Object>();
-
   // Invokes a Step method
   @Override
   protected Statement methodBlock(final FrameworkMethod method) {
@@ -304,7 +305,7 @@ public class PepperRunner extends BlockJUnit4ClassRunner {
       @Override
       public void evaluate() throws Throwable {
         // FrameworkMethod - Object invokeExplosively(Object target, Object... params)
-        method.invokeExplosively(stepDef, params.toArray());
+        method.invokeExplosively(stepDef, arguments.toArray());
       }
     };
   }

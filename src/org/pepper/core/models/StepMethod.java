@@ -42,6 +42,14 @@ public abstract class StepMethod extends FrameworkMethod {
     return Boolean.valueOf(arg);
   }
 
+  List<Object> arguments = new ArrayList<Object>();
+
+  public List<Object> getArguments() {
+    // Note: This method should be called after a call to matches(String line) method
+    // TODO: figure out a better way to implement this functionality
+    return arguments;
+  }
+
   // ex. "Given I have -3" should match with "Given I have $value"
   public boolean matches(String line) {
     StringTokenizer stepTokenizer = new StringTokenizer(getStep());
@@ -49,8 +57,7 @@ public abstract class StepMethod extends FrameworkMethod {
     String stepToken, lineToken;
 
     Class<?>[] parameterTypes = getMethod().getParameterTypes();
-    List<Object> params = new ArrayList<Object>();
-    // params.clear();
+    arguments.clear();
 
     // iterate over each word in method and line
     while (stepTokenizer.hasMoreTokens() && lineTokenizer.hasMoreTokens()) {
@@ -65,7 +72,7 @@ public abstract class StepMethod extends FrameworkMethod {
         }
 
         Object obj = parseArgument(lineToken);
-        params.add(obj);
+        arguments.add(obj);
         String str = "";
 
         //System.out.println("obj -> " + obj.getClass().getName());
@@ -80,13 +87,13 @@ public abstract class StepMethod extends FrameworkMethod {
         }
 
         // if we've read more arguments than the method takes, continue with next method
-        if (params.size() > parameterTypes.length) {
+        if (arguments.size() > parameterTypes.length) {
           // TODO: demonstrate purpose of this test
           return false;
         }
 
         // if the given argument type does not match up with the expected argument, continue with next method
-        if (!parameterTypes[params.size() - 1].getCanonicalName().equals(str)) {
+        if (!parameterTypes[arguments.size() - 1].getCanonicalName().equals(str)) {
           return false;
         }
       }
