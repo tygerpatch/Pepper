@@ -92,11 +92,13 @@ public class PepperRunner extends BlockJUnit4ClassRunner {
   }
 
   private List<Object> arguments;
+  private Description description;
 
   private void runStep(String line, List<? extends StepMethod> stepMethods, RunNotifier runNotifier) {
     for (StepMethod stepMethod : stepMethods) {
       if (stepMethod.matches(line)) {
         arguments = stepMethod.getArguments();
+        description = Description.createTestDescription(klass, line);
         PepperRunner.this.runChild(stepMethod, runNotifier);
         return;
       }
@@ -313,8 +315,6 @@ public class PepperRunner extends BlockJUnit4ClassRunner {
 
   @Override
   protected void runChild(final FrameworkMethod method, RunNotifier notifier) {
-    Description description = describeChild(method);
-
     // if (method.getAnnotation(Ignore.class) != null) {   // <- BlockJUnit4ClassRunner's version
     if (method.getAnnotation(Pending.class) != null) {
       notifier.fireTestIgnored(description);
